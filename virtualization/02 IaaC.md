@@ -394,7 +394,7 @@ then the machine is not created for that environment.
 
 ---
 
-## Решение 2
+## Решение 3
 
 
 yc
