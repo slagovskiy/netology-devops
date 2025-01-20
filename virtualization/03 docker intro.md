@@ -600,7 +600,7 @@ d000633a5681: Pushed
 latest: digest: sha256:275a5928a1c50fad16055306f666f8be94022ae9822229d1ffb40fc2da82d27a size: 1777
 ```
 
-![](Screenshot from 2025-01-20 23-13-13.png)
+![]("Screenshot from 2025-01-20 23-13-13.png")
 
 
 ---
