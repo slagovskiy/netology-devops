@@ -603,6 +603,43 @@ latest: digest: sha256:275a5928a1c50fad16055306f666f8be94022ae9822229d1ffb40fc2d
 ![](2025-01-20_23-13-13.png)
 
 
+Удаление одного из compose файлов
+
+```
+$ docker compose up -d
+
+WARN[0000] Found orphan containers ([task-5-portainer-1]) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up. 
+[+] Running 1/1
+ ✔ Container task-5-registry-1  Running                                                  
+```
+
+Docker обноружил осиротевшие контейнеры (они больше не учавствуют в конфигурации стэка), в данном случае это portainer, он не будет обновляться, но будет оставаться в составе стэка.
+
+Выполняем предложенное действие
+
+```
+$ docker compose up -d --remove-orphans
+
+[+] Running 2/2
+ ✔ Container task-5-portainer-1  Removed                                                                           0.1s 
+ ✔ Container task-5-registry-1   Running                                                                           0.0s 
+
+```
+
+Выпавший из конфигурации контейнер удалился. Останавливаем.
+
+```
+$ docker compose stop
+
+[+] Stopping 1/1
+ ✔ Container task-5-registry-1  Stopped                                              
+```
+
+![](2025-01-22_00-03-56.png)
+
+![](2025-01-22_00-05-48.png)
+
+
 ---
 
 
