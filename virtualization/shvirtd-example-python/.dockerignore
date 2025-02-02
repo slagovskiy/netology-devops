@@ -1,0 +1,9 @@
+Dockerfile*
+LICENSE
+not_tested_main.py
+*.yaml
+*.md
+*.pdf
+venv/
+nginx/
+haproxy/
