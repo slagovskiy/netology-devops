@@ -499,6 +499,87 @@ Bye
 5. (Необязательная часть) Дополнительно настройте remote ssh context к вашему серверу. Отобразите список контекстов и результат удаленного выполнения ```docker ps -a```
 6. В качестве ответа повторите  sql-запрос и приложите скриншот с данного сервера, bash-скрипт и ссылку на fork-репозиторий.
 
+---
+
+## Решение 4
+
+
+```
+# ./run_lab
+Cloning into 'netology-devops'...
+remote: Enumerating objects: 2073, done.
+remote: Counting objects: 100% (2073/2073), done.
+remote: Compressing objects: 100% (1876/1876), done.
+remote: Total 2073 (delta 172), reused 2062 (delta 166), pack-reused 0 (from 0)
+Receiving objects: 100% (2073/2073), 28.20 MiB | 24.43 MiB/s, done.
+Resolving deltas: 100% (172/172), done.
+WARN[0002] /opt/shvirtd/proxy.yaml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+WARN[0002] /opt/shvirtd/compose.yaml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Running 24/24
+ ✔ ingress-proxy Pulled                                                                                                                                                        30.6s 
+   ✔ a330b6cecb98 Pull complete                                                                                                                                                 6.8s 
+   ✔ 5ef80e6f29b5 Pull complete                                                                                                                                                19.6s 
+   ✔ f699b0db74e3 Pull complete                                                                                                                                                23.1s 
+   ✔ 0f701a34c55e Pull complete                                                                                                                                                23.7s 
+   ✔ 3229dce7b89c Pull complete                                                                                                                                                23.9s 
+   ✔ ddb78cb2d047 Pull complete                                                                                                                                                24.0s 
+ ✔ db Pulled                                                                                                                                                                   53.0s 
+   ✔ 2c0a233485c3 Pull complete                                                                                                                                                 6.4s 
+   ✔ ecb40fda03e3 Pull complete                                                                                                                                                 7.8s 
+   ✔ 1c6c73d8c7a7 Pull complete                                                                                                                                                 9.5s 
+   ✔ 986789341eb6 Pull complete                                                                                                                                                12.6s 
+   ✔ 720920ea2b0b Pull complete                                                                                                                                                15.4s 
+   ✔ 8789191db836 Pull complete                                                                                                                                                18.1s 
+   ✔ 311a2cd705b0 Pull complete                                                                                                                                                20.0s 
+   ✔ 3883debd05a3 Pull complete                                                                                                                                                20.1s 
+   ✔ bdca1d64207d Pull complete                                                                                                                                                41.0s 
+   ✔ 3add1d61b6f4 Pull complete                                                                                                                                                41.1s 
+ ✔ reverse-proxy Pulled                                                                                                                                                        28.7s 
+   ✔ af302e5c37e9 Pull complete                                                                                                                                                 6.8s 
+   ✔ 2ad3384282a0 Pull complete                                                                                                                                                 9.7s 
+   ✔ d48a9cb4ef6c Pull complete                                                                                                                                                11.2s 
+   ✔ 77d99d3e1cc3 Pull complete                                                                                                                                                15.7s 
+   ✔ 9832235a3273 Pull complete                                                                                                                                                19.4s 
+[+] Building 108.1s (10/10) FINISHED                                                                                                                                  docker:default
+ => [web internal] load build definition from Dockerfile.python                                                                                                                 1.0s
+ => => transferring dockerfile: 371B                                                                                                                                            0.1s
+ => [web internal] load metadata for docker.io/library/python:3.9-slim                                                                                                          4.1s
+ => [web internal] load .dockerignore                                                                                                                                           0.2s
+ => => transferring context: 2B                                                                                                                                                 0.0s
+ => [web 1/4] FROM docker.io/library/python:3.9-slim@sha256:bb8009c87ab69e751a1dd2c6c7f8abaae3d9fce8e072802d4a23c95594d16d84                                                    4.6s
+ => => resolve docker.io/library/python:3.9-slim@sha256:bb8009c87ab69e751a1dd2c6c7f8abaae3d9fce8e072802d4a23c95594d16d84                                                        0.1s
+ => => sha256:bb8009c87ab69e751a1dd2c6c7f8abaae3d9fce8e072802d4a23c95594d16d84 10.41kB / 10.41kB                                                                                0.0s
+ => => sha256:ddb56f2e39ec00c79c1207f182c60e03ddfdf417525b56ef467e1519706792cd 1.75kB / 1.75kB                                                                                  0.0s
+ => => sha256:453d3342b002fa5f904ba0cd72a07accb5121641d20776f3e64339842f275d38 5.28kB / 5.28kB                                                                                  0.0s
+ => => sha256:1da0723265ec311debcf6bec17d4fae5f1e5f7809fca4378aac265cdef238f1c 3.51MB / 3.51MB                                                                                  0.6s
+ => => sha256:4f4cb1a24c66f1a92f204ba0bbd6d2a7c941a853c83161ffa38bbfa121448861 14.93MB / 14.93MB                                                                                1.0s
+ => => sha256:c876ae22765e4a125855eb121718c3f8f07bd8b00dae0ad4e68e716571961f37 249B / 249B                                                                                      1.1s
+ => => extracting sha256:1da0723265ec311debcf6bec17d4fae5f1e5f7809fca4378aac265cdef238f1c                                                                                       0.3s
+ => => extracting sha256:4f4cb1a24c66f1a92f204ba0bbd6d2a7c941a853c83161ffa38bbfa121448861                                                                                       1.0s
+ => => extracting sha256:c876ae22765e4a125855eb121718c3f8f07bd8b00dae0ad4e68e716571961f37                                                                                       0.0s
+ => [web internal] load build context                                                                                                                                           9.1s
+ => => transferring context: 116.84MB                                                                                                                                           8.8s
+ => [web 2/4] WORKDIR /app                                                                                                                                                      3.2s
+ => [web 3/4] COPY . .                                                                                                                                                          4.2s
+ => [web 4/4] RUN python -m pip install --no-cache-dir -r requirements.txt                                                                                                     87.2s
+ => [web] exporting to image                                                                                                                                                    1.3s 
+ => => exporting layers                                                                                                                                                         1.2s 
+ => => writing image sha256:13f56aed33eb27d678e7a11892f18b32670cc15afa5415bfff22489ce7d5b270                                                                                    0.0s 
+ => => naming to docker.io/library/shvirtd-web                                                                                                                                  0.0s 
+ => [web] resolving provenance for metadata file                                                                                                                                0.2s 
+[+] Running 6/6                                                                                                                                                                      
+ ✔ web                                Built                                                                                                                                     0.0s 
+ ✔ Network shvirtd_backend            Created                                                                                                                                   0.2s 
+ ✔ Container web                      Started                                                                                                                                   3.2s 
+ ✔ Container shvirtd-ingress-proxy-1  Started                                                                                                                                   2.9s 
+ ✔ Container shvirtd-reverse-proxy-1  Started                                                                                                                                   3.1s 
+ ✔ Container shvirtd-db-1             Started                                                                                                                                   3.2s 
+
+```
+
+---
+
+
 ## Задача 5 (*)
 1. Напишите и задеплойте на вашу облачную ВМ bash скрипт, который произведет резервное копирование БД mysql в директорию "/opt/backup" с помощью запуска в сети "backend" контейнера из образа ```schnitzler/mysqldump``` при помощи ```docker run ...``` команды. Подсказка: "документация образа."
 2. Протестируйте ручной запуск
