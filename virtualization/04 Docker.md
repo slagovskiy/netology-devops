@@ -506,6 +506,7 @@ Bye
 
 ```
 # ./run_lab
+
 Cloning into 'netology-devops'...
 remote: Enumerating objects: 2073, done.
 remote: Counting objects: 100% (2073/2073), done.
@@ -577,6 +578,94 @@ WARN[0002] /opt/shvirtd/compose.yaml: the attribute `version` is obsolete, it wi
 
 ```
 
+sql
+
+```
+# docker exec -ti shvirtd-db-1 mysql -uroot -pYtReWq4321
+
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 16
+Server version: 8.4.4 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2025, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
+| virtd              |
++--------------------+
+5 rows in set (0.01 sec)
+
+mysql> use virtd;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++-----------------+
+| Tables_in_virtd |
++-----------------+
+| requests        |
++-----------------+
+1 row in set (0.01 sec)
+
+mysql> SELECT * from requests LIMIT 10;
++----+---------------------+-----------------+
+| id | request_date        | request_ip      |
++----+---------------------+-----------------+
+|  1 | 2025-02-02 16:17:33 | 195.211.27.85   |
+|  2 | 2025-02-02 16:17:33 | 185.37.147.117  |
+|  3 | 2025-02-02 16:17:33 | 167.235.135.184 |
+|  4 | 2025-02-02 16:17:33 | 45.159.248.77   |
+|  5 | 2025-02-02 16:17:33 | 45.141.149.25   |
+|  6 | 2025-02-02 16:17:33 | 93.123.16.89    |
+|  7 | 2025-02-02 16:17:34 | 141.98.234.68   |
+|  8 | 2025-02-02 16:17:34 | 185.25.204.60   |
+|  9 | 2025-02-02 16:17:34 | 185.130.104.238 |
+| 10 | 2025-02-02 16:17:36 | 103.214.169.52  |
++----+---------------------+-----------------+
+10 rows in set (0.01 sec)
+
+mysql> quit;
+Bye
+```
+
+script
+
+```
+# cat run_lab 
+
+cd ~
+
+mkdir /opt/shvirtd
+
+git clone https://github.com/slagovskiy/netology-devops
+
+cp -r ~/netology-devops/virtualization/shvirtd-example-python/* /opt/shvirtd
+
+echo MYSQL_ROOT_PASSWORD="YtReWq4321" > /opt/shvirtd/.env
+echo MYSQL_DATABASE="virtd" >> /opt/shvirtd/.env
+echo MYSQL_USER="app" >> /opt/shvirtd/.env
+echo MYSQL_PASSWORD="QwErTy1234" >> /opt/shvirtd/.env
+
+cd /opt/shvirtd
+
+docker compose up -d
+
+```
+
 ---
 
 
@@ -586,17 +675,297 @@ WARN[0002] /opt/shvirtd/compose.yaml: the attribute `version` is obsolete, it wi
 3. Настройте выполнение скрипта раз в 1 минуту через cron, crontab или systemctl timer. Придумайте способ не светить логин/пароль в git!!
 4. Предоставьте скрипт, cron-task и скриншот с несколькими резервными копиями в "/opt/backup"
 
+---
+## Решение 5
+
+Предложенный контейнер плюется ошибкой.
+
+```
+mysqldump: Got error: 1045: "Plugin caching_sha2_password could not be loaded: Error loading shared library /usr/lib/mariadb/plugin/caching_sha2_password.so: No such file or directory" when trying to connect
+```
+
+Можно чинить, а можно воспользоваться mysqldump-ом, который заведомо рабочий и лежит в контейнере с базой данны, для этого слегка модифицируем compose файл, пробросим в него локальную папку для хранения резервных копий и скрипт, который будем запускать.
+
+Простой скрипт для создания дампа.
+
+```
+#!/bin/sh
+
+now=$(date +"%s_%Y-%m-%d")
+/usr/bin/mysqldump --opt -h localhost -u root -p${MYSQL_ROOT_PASSWORD} ${MYSQL_DATABASE} > "/backup/${now}_${MYSQL_DATABASE}.sql"
+```
+
+Модифицированный compose.
+
+```
+version: '3.8'
+include:
+  - proxy.yaml
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    restart: always
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+    ports:
+      - "5000:5000"
+    networks:
+      backend:
+        ipv4_address: 172.20.0.5
+
+  db:
+    image: mysql:8
+    restart: always
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./backup:/backup
+    networks:
+      backend:
+        ipv4_address: 172.20.0.10
+
+networks:
+  backend:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 172.20.0.0/24
+```
+
+Добавлен volume в котором будем хранить дампы, и сам скрипт для создания этих дампов.
+
+Вызываем командой:
+
+```
+$ docker exec shvirtd-example-python-db-1 /backup/backup
+```
+
+Команду можно поставить в crontab, на пример указав запуск каждую минуту: */1 * * * * 
+
+Но у такого решения, как и у решения с запуском стороннего контейнера есть большой минус, надо знать или имя контейнера, а оно формируется из имени stack-а, или имя сети к которой контейнеру надо подключаться.
+
+```
+$ ls -l
+
+-rw-r--r-- 1 root   root   1916 фев  3 21:36 1738593395_2025-02-03_virtd.sql
+-rw-r--r-- 1 root   root   1916 фев  3 21:38 1738593494_2025-02-03_virtd.sql
+-rwxrwxr-x 1 sergey sergey  168 фев  3 21:38 backup
+```
+
+---
+
+
 ## Задача 6
 Скачайте docker образ ```hashicorp/terraform:latest``` и скопируйте бинарный файл ```/bin/terraform``` на свою локальную машину, используя dive и docker save.
 Предоставьте скриншоты  действий .
+
+---
+
+## Решение 6
+
+```
+$ docker pull hashicorp/terraform:latest
+
+latest: Pulling from hashicorp/terraform
+210a2ae1a75e: Pull complete 
+96a334d74129: Pull complete 
+a8d21f258bec: Pull complete 
+3601f51a5386: Pull complete 
+Digest: sha256:679ac5e095bf550bc726742cd12efa6050f0913080df479fdabfeb202953af28
+Status: Downloaded newer image for hashicorp/terraform:latest
+
+$ dive hashicorp/terraform:latest
+
+                                                                                           │ Current Layer Contents ├────────────────────────────────────────────────────────────────
+│ Layers ├──────────────────────────────────────────────────────────────────────────────── Permission     UID:GID       Size  Filetree                                               
+Cmp   Size  Command                                                                        drwxr-xr-x         0:0      90 MB  ├── bin                                                
+    7.8 MB  FROM blobs                                                                     -rwxr-xr-x         0:0      90 MB  │   └── terraform                                      
+     18 MB  RUN |4 PRODUCT_VERSION=1.10.5 PRODUCT_REVISION=898e397ebaefb4d0c363b7332b3ba18 drwxr-xr-x         0:0     4.9 kB  └── usr                                                
+    4.9 kB  COPY LICENSE /usr/share/doc/terraform/LICENSE.txt # buildkit                   drwxr-xr-x         0:0     4.9 kB      └── share                                          
+     90 MB  COPY dist/linux/amd64/terraform /bin/terraform # buildkit                      drwxr-xr-x         0:0     4.9 kB          └── doc                                        
+                                                                                           drwxr-xr-x         0:0     4.9 kB              └── terraform                              
+                                                                                           -rw-r--r--         0:0     4.9 kB                  └── LICENSE.txt                        
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+│ Layer Details ├─────────────────────────────────────────────────────────────────────────                                                                                           
+                                                                                                                                                                                     
+Tags:   (unavailable)                                                                                                                                                                
+Id:     blobs                                                                                                                                                                        
+Digest: sha256:da25c3c268493bc8d1313c7698a81a97a99c917ae09a248795e969d82cb53f65                                                                                                      
+Command:                                                                                                                                                                             
+COPY dist/linux/amd64/terraform /bin/terraform # buildkit                                                                                                                            
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+│ Image Details ├─────────────────────────────────────────────────────────────────────────                                                                                           
+                                                                                                                                                                                     
+Image name: hashicorp/terraform:latest                                                                                                                                               
+Total Image size: 117 MB                                                                                                                                                             
+Potential wasted space: 78 kB                                                                                                                                                        
+Image efficiency score: 99 %                                                                                                                                                         
+                                                                                                                                                                                     
+Count   Total Space  Path                                                                                                                                                            
+    2         55 kB  /lib/apk/db/installed                                                                                                                                           
+    2         22 kB  /lib/apk/db/scripts.tar                                                                                                                                         
+    2         190 B  /lib/apk/db/triggers                                                                                                                                            
+    2         160 B  /etc/apk/world                                                                                                                                                  
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+                                                                                                                                                                                     
+Path Filter:terr                                                                                                                                                                     
+▏^C Quit ▏Tab Switch view ▏^F Filter ▏^L Show layer changes ▏^A Show aggregated changes ▏                                                                                            
+```
+
+```
+$ docker save hashicorp/terraform:latest > terraform.tar
+$ mkdir extracted && cd extracted
+$ tar xf ../terraform.tar
+$ ls
+
+blobs  index.json  manifest.json  oci-layout  repositories
+
+$ cd blobs/sha256/
+$ ls
+
+37c2623d85459e06a2fdfe7a80c70d68636599b99b0421e3e1a70edd9be910d8  b2414392ff8f5b2f94e6ef5eda5677b27619b1484a5d9efde75c32ccb6b14c10
+42470a30511b23a265f6d826ebab78f8c188e12fc2c9e9cf67f4d96501eda006  ce56e53e8ce1134c7f13d1480c2ae0165fdd55ffe143dc4b436dd91820db5d76
+51e5582be2143e1c03f9dae4e335b7b5e4336f9846e0f15029d2c8a7f957db3f  da25c3c268493bc8d1313c7698a81a97a99c917ae09a248795e969d82cb53f65
+61e9b75fba2b05844baade171fc1e6e3990695f595d01523f91b0df30be02a60  e728474fad2133ff8b4e485415ccc881fecd8232de374d6cedbdb1f9d14b61d6
+a0904247e36a7726c03c71ee48f3e64462021c88dafeb13f37fdaf613b27f11c  fe8c877932a249db1df45c645ddc0035108a8ef4076d3c5ba15dcf23f5b849d2
+
+$ tar -xf da25c3c268493bc8d1313c7698a81a97a99c917ae09a248795e969d82cb53f65
+
+$ cd bin
+$ ls
+
+terraform
+```
+
+
+---
+
 
 ## Задача 6.1
 Добейтесь аналогичного результата, используя docker cp.  
 Предоставьте скриншоты  действий .
 
+---
+## Решение 6.1
+
+```
+$ docker pull hashicorp/terraform:latest
+
+latest: Pulling from hashicorp/terraform
+210a2ae1a75e: Pull complete 
+96a334d74129: Pull complete 
+a8d21f258bec: Pull complete 
+3601f51a5386: Pull complete 
+Digest: sha256:679ac5e095bf550bc726742cd12efa6050f0913080df479fdabfeb202953af28
+Status: Downloaded newer image for hashicorp/terraform:latest
+docker.io/hashicorp/terraform:latest
+
+$ docker create --name temp_terraform hashicorp/terraform:latest
+
+0d4953823448411102e2a7731da2310dd1465da321d9fa6ee567d62ca5104cc9
+
+$ docker cp temp_terraform:/bin/terraform .
+
+Successfully copied 90.2MB to /home/sergey/.
+
+$ docker rm temp_terraform
+
+temp_terraform
+
+$ ls | grep terra
+
+terraform
+```
+
+---
+
 ## Задача 6.2 (**)
 Предложите способ извлечь файл из контейнера, используя только команду docker build и любой Dockerfile.  
 Предоставьте скриншоты  действий .
+
+---
+
+## Решение 6.2
+
+```
+$ ls
+
+Dockerfile
+
+$ cat Dockerfile 
+
+FROM hashicorp/terraform:latest as builder-stage
+
+FROM scratch
+COPY --from=builder-stage /bin/terraform /
+
+$ docker build -o . .
+
+[+] Building 0.6s (6/6) FINISHED                                                                                                                                      docker:default
+ => [internal] load build definition from Dockerfile                                                                                                                            0.0s
+ => => transferring dockerfile: 144B                                                                                                                                            0.0s
+ => WARN: FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)                                                                                                  0.0s
+ => [internal] load metadata for docker.io/hashicorp/terraform:latest                                                                                                           0.0s
+ => [internal] load .dockerignore                                                                                                                                               0.0s
+ => => transferring context: 2B                                                                                                                                                 0.0s
+ => [builder-stage 1/1] FROM docker.io/hashicorp/terraform:latest                                                                                                               0.0s
+ => [stage-1 1/1] COPY --from=builder-stage /bin/terraform /                                                                                                                    0.1s
+ => exporting to client directory                                                                                                                                               0.2s
+ => => copying files 90.25MB                                                                                                                                                    0.2s
+
+ 1 warning found (use docker --debug to expand):
+ - FromAsCasing: 'as' and 'FROM' keywords' casing do not match (line 1)
+
+$ ls
+
+Dockerfile  terraform
+```
+
+---
 
 ## Задача 7 (***)
 Запустите ваше python-приложение с помощью runC, не используя docker или containerd.  
