@@ -1,0 +1,10 @@
+version: "3"
+services:
+  ubuntu:
+    image: pycontribs/ubuntu:latest
+    container_name: ubuntu
+    tty: true
+  centos:
+    image: centos:centos7
+    container_name: centos7
+    tty: true
