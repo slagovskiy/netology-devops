@@ -1,0 +1,10 @@
+---
+clickhouse_version: "22.3.3.44"
+clickhouse_listen_host_default:
+  - "::"
+clickhouse_networks_default:
+  - "::/0"
+  - "127.0.0.1"
+
+clickhouse_dbs_default:
+  - name: logs

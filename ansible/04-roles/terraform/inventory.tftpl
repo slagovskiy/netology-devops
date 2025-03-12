@@ -1,0 +1,23 @@
+---
+all:
+  children:
+    clickhouse:
+      hosts:
+%{ for i, v in clickhouse ~}
+        ${i}:
+          ansible_host: ${v}
+%{ endfor ~}
+
+    vector:
+      hosts:
+%{ for i, v in vectors ~}
+        ${i}:
+          ansible_host: ${v}
+%{ endfor ~}
+
+    lighthouse:
+      hosts:
+%{ for i, v in lighthouse ~}
+        ${i}:
+          ansible_host: ${v}
+%{ endfor ~}
