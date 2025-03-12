@@ -1,0 +1,202 @@
+---
+- name: Install NGINX
+  hosts: lighthouse
+  tags: lighthouse
+  become: true
+  handlers:
+    - name: NGINX | Start nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+      listen: start nginx
+    - name: NGINX | Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      listen: reload nginx
+
+  tasks:
+    - name: NGINX | Add nginx apt-key
+      ansible.builtin.apt_key:
+        url: http://nginx.org/keys/nginx_signing.key
+        state: present
+
+    - name: NGINX | Add nginx apt repository
+      ansible.builtin.apt_repository:
+        repo: 'deb https://nginx.org/packages/ubuntu/ {{ ansible_distribution_release }} nginx'
+        state: present
+        filename: nginx
+        update_cache: true
+
+    - name: NGINX | Install
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+      notify: start nginx
+
+    - name: NGINX | Create general config
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: "0644"
+      notify: reload nginx
+
+- name: Install Lighthouse
+  hosts: lighthouse
+  become: true
+  handlers:
+    - name: NGINX | Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+      listen: reload nginx
+  pre_tasks:
+    - name: Lighthouse | install dependencies
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+  tasks:
+    - name: Lighthouse | Get from source
+      ansible.builtin.git:
+        repo: "{{ lighthouse_vcs }}"
+        version: master
+        dest: "{{ lighthouse_location }}"
+
+    - name: Lighthouse | Create Lighthouse config
+      become: true
+      ansible.builtin.template:
+        src: templates/lighthouse.conf.j2
+        dest: /etc/nginx/conf.d/default.conf
+        mode: "0644"
+      notify: reload nginx
+
+
+- name: Install Clickhouse
+  hosts: clickhouse
+  tags: clickhouse
+  handlers:
+    - name: Start clickhouse service
+      become: true
+      ansible.builtin.service:
+        name: clickhouse-server
+        state: restarted
+  tasks:
+    - name: Download Clickhouse distrib
+      block:
+        - name: Get clickhouse distrib noarch packages
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/{{ item }}-{{ clickhouse_version }}.noarch.rpm"
+            dest: "./{{ item }}-{{ clickhouse_version }}.rpm"
+            mode: "0644"
+          with_items: "{{ clickhouse_packages }}"
+      rescue:
+        - name: Get clickhouse distrib x86_64 instead
+          ansible.builtin.get_url:
+            url: "https://packages.clickhouse.com/rpm/stable/clickhouse-common-static-{{ clickhouse_version }}.x86_64.rpm"
+            dest: "./clickhouse-common-static-{{ clickhouse_version }}.rpm"
+            mode: "0644"
+    - name: Install clickhouse packages
+      become: true
+      ansible.builtin.yum:
+        name:
+          - clickhouse-common-static-{{ clickhouse_version }}.rpm
+          - clickhouse-client-{{ clickhouse_version }}.rpm
+          - clickhouse-server-{{ clickhouse_version }}.rpm
+      notify: Start clickhouse service
+    - name: Set the default listen address
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/clickhouse-server/config.xml
+        regex: '^.*<listen_host>::</listen_host>'
+        line: '    <listen_host>::</listen_host>'
+        backrefs: true
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+    - name: Create database
+      ansible.builtin.command: "clickhouse-client -h 0.0.0.0 -q 'create database logs;'"
+      register: create_db
+      failed_when: create_db.rc != 0 and create_db.rc != 82
+      changed_when: create_db.rc == 0
+
+- name: Install Vector
+  hosts: vector
+  tags: vector
+  become: true
+  handlers:
+    - name: Restart service Vector, also issue daemon-reload to pick up config changes
+      ansible.builtin.systemd_service:
+        state: restarted
+        daemon_reload: true
+        name: vector
+        enabled: true
+      listen: "restart service"
+  tasks:
+    - name: Ensure group "vector" exists
+      ansible.builtin.group:
+        name: vector
+        state: present
+
+    - name: Add the user 'vector' with a bash shell, appending the group 'vector' and groups for scraping
+      ansible.builtin.user:
+        name: vector
+        shell: /bin/bash
+        groups: syslog,systemd-journal,vector
+
+    - name: Create bin and data directory
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+        group: "{{ item.group }}"
+      loop:
+        - { path: "/etc/vector", mode: '0755', group: 'root' }
+        - { path: "/var/lib/vector", mode: '0775', group: 'vector' }
+
+    - name: Get Vector package
+      ansible.builtin.get_url:
+        url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-{{ vector_architecture }}-unknown-linux-musl.tar.gz"
+        dest: "/tmp/vector-{{ vector_version }}.tar.gz"
+        mode: '0644'
+      register: archive
+
+    - name: Unarchive Vector package to destination
+      ansible.builtin.unarchive:
+        src: "{{ archive.dest }}"
+        dest: /etc/vector
+        remote_src: true
+        mode: '0755'
+        owner: root
+        group: root
+      register: unpacked
+
+    - name: Set Vector config from template
+      ansible.builtin.template:
+        src: vector.yaml.j2
+        dest: /etc/vector/vector.yaml
+        mode: '0755'
+      notify: restart service
+
+    - name: Copy Vector default unit in systemd (if changed - notify handler)
+      ansible.builtin.copy:
+        src: "{{ unpacked.dest }}/vector-x86_64-unknown-linux-musl/etc/systemd/vector.service"
+        dest: /lib/systemd/system/vector.service
+        owner: root
+        group: root
+        mode: '0755'
+        remote_src: true
+      register: unit
+      notify: restart service
+
+    - name: Create a symbolic links for starting systemd unit and bin
+      ansible.builtin.file:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: root
+        state: link
+        mode: "0755"
+      loop:
+        - { src: "{{ unit.dest }}", dest: '/etc/systemd/system/vector.service' }
+        - { src: "{{ unpacked.dest }}/vector-x86_64-unknown-linux-musl/bin/vector", dest: '/usr/bin/vector' }
