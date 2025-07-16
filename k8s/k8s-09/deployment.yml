@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: sergey
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: sergey
+  name: nginx-svc
+spec:
+  selector:
+    app: nginx
+  type: NodePort
+  ports:
+  - name: web
+    port: 80
+    protocol: TCP
+    nodePort: 30080
