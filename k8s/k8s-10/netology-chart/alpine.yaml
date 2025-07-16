@@ -1,0 +1,13 @@
+deployment:
+  name: multitool-wbitt
+
+service:
+  name: multitool-wbitt
+
+deploymentLabels: 
+  app: multitool-wbitt
+podLabels: 
+  app: multitool-wbitt
+
+image:
+  repository: wbitt/network-multitool:alpine-minimal

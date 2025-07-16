@@ -1,0 +1,22 @@
+deployment:
+  name: multitool
+
+replicaCount: 1
+
+image:
+  name: multitool
+  repository: wbitt/network-multitool
+
+deploymentLabels: 
+  app: multitool
+podLabels: 
+  app: multitool
+
+service:
+  name: multitool
+  type: NodePort
+  port:
+    name: web
+    port: 80
+    protocol: TCP
+    nodePort: 30080

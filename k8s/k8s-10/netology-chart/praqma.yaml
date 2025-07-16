@@ -1,0 +1,13 @@
+deployment:
+  name: multitool-praqma
+
+service:
+  name: multitool-praqma
+
+deploymentLabels: 
+  app: multitool-praqma
+podLabels: 
+  app: multitool-praqma
+
+image:
+  repository: praqma/network-multitool
