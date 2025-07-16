@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spam
+  template:
+    metadata:
+      labels:
+        app: spam
+    spec:
+      containers:
+      - name: spammer
+        image: busybox
+        command: ['sh', '-c', "while true; do echo $(date) > /spam/what_time_is_it.txt; sleep 5; done"]
+        volumeMounts:
+        - name: sharing
+          mountPath: /spam
+      - name: watcher
+        image: praqma/network-multitool
+        volumeMounts:
+        - name: sharing
+          mountPath: /spam
+      volumes:
+      - name: sharing
+        persistentVolumeClaim:
+          claimName: pvc-volume
