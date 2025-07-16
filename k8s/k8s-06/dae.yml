@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: log-daemon
+  labels:
+    app: log
+spec:
+  selector:
+    matchLabels:
+      app: log
+  template:
+    metadata:
+      labels:
+        app: log
+    spec:
+      containers:
+      - name: reader
+        image: praqma/network-multitool
+        volumeMounts:
+        - name: sharing
+          mountPath: /outsider-logs
+      volumes:
+      - name: sharing
+        hostPath:
+          path: /var/log/syslog
