@@ -1,0 +1,74 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ports
+data:
+  HTTP_PORT: "8080"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: files
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>Пример базовой структуры HTML</title>
+    </head>
+    <body>
+    <h1>Заголовок страницы</h1>
+    <p>Это пример абзаца текста в HTML-документе.</p>
+    </body>
+    </html>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        volumeMounts:
+        - name: index
+          mountPath: /usr/share/nginx/html
+      - name: multitool
+        image: praqma/network-multitool
+        envFrom:
+        - configMapRef:
+            name: ports
+      volumes:
+      - name: index
+        configMap:
+          name: files
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+spec:
+  selector:
+    app: nginx
+  type: NodePort
+  ports:
+  - name: web
+    port: 80
+    protocol: TCP
+    nodePort: 30080
