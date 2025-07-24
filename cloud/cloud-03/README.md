@@ -12,7 +12,7 @@
 
 ## Решение
 
-terraform aplly
+terraform apply
 
 ```
 sergey@netology-01:~/Work/netology-devops/cloud/cloud-03/terraform$ terraform apply -auto-approve
