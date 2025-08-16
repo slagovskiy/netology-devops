@@ -1,0 +1,9 @@
+personal.auto.tfvars
+.terraform*
+terraform.tfstate*
+
+credfile.key
+
+ca.pem
+test.kubeconfig
+

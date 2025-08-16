@@ -58,7 +58,7 @@
 
 <p><details><summary>$ terraform apply</summary>
 
-'''
+<pre>
 Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
   + create
 
@@ -156,7 +156,7 @@ yandex_storage_bucket.slagovskiy-bucket: Creation complete after 5s [id=slagovsk
 
 Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
 
-'''
+</pre>
 </details></p>
 
 Проверяем созаднное.
@@ -240,6 +240,1087 @@ $ ls ../kuber/cred*
 1. Работоспособный Kubernetes кластер.
 2. В файле `~/.kube/config` находятся данные для доступа к кластеру.
 3. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
+
+---
+
+### Решение
+
+Воспользуемся развертыванием через Yandex Managment Service for Kubernetes.
+
+Поднимаем 3 сети, сервисный аккаунт для кластера, кластер в 3х зонах доступности, 3 группы ВМ по 1 ВМ в каждой зоне.
+[Конфигурация](./terraform/).
+
+<p><details><summary>$ terraform apply</summary>
+
+<pre>
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # yandex_iam_service_account.my-regional-account will be created
+  + resource "yandex_iam_service_account" "my-regional-account" {
+      + created_at  = (known after apply)
+      + description = "K8S regional service account"
+      + folder_id   = (known after apply)
+      + id          = (known after apply)
+      + name        = "regional-k8s-account"
+    }
+
+  # yandex_kms_symmetric_key.kms-key will be created
+  + resource "yandex_kms_symmetric_key" "kms-key" {
+      + created_at          = (known after apply)
+      + default_algorithm   = "AES_128"
+      + deletion_protection = false
+      + folder_id           = (known after apply)
+      + id                  = (known after apply)
+      + name                = "kms-key"
+      + rotated_at          = (known after apply)
+      + rotation_period     = "8760h"
+      + status              = (known after apply)
+    }
+
+  # yandex_kubernetes_cluster.k8s-regional will be created
+  + resource "yandex_kubernetes_cluster" "k8s-regional" {
+      + cluster_ipv4_range       = (known after apply)
+      + cluster_ipv6_range       = (known after apply)
+      + created_at               = (known after apply)
+      + description              = (known after apply)
+      + folder_id                = (known after apply)
+      + health                   = (known after apply)
+      + id                       = (known after apply)
+      + labels                   = (known after apply)
+      + log_group_id             = (known after apply)
+      + name                     = "k8s-regional"
+      + network_id               = (known after apply)
+      + node_ipv4_cidr_mask_size = 24
+      + node_service_account_id  = (known after apply)
+      + release_channel          = (known after apply)
+      + service_account_id       = (known after apply)
+      + service_ipv4_range       = (known after apply)
+      + service_ipv6_range       = (known after apply)
+      + status                   = (known after apply)
+
+      + kms_provider {
+          + key_id = (known after apply)
+        }
+
+      + master {
+          + cluster_ca_certificate = (known after apply)
+          + etcd_cluster_size      = (known after apply)
+          + external_v4_address    = (known after apply)
+          + external_v4_endpoint   = (known after apply)
+          + external_v6_endpoint   = (known after apply)
+          + internal_v4_address    = (known after apply)
+          + internal_v4_endpoint   = (known after apply)
+          + public_ip              = true
+          + security_group_ids     = (known after apply)
+          + version                = (known after apply)
+          + version_info           = (known after apply)
+
+          + maintenance_policy (known after apply)
+
+          + master_location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-a"
+            }
+          + master_location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-b"
+            }
+          + master_location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-d"
+            }
+
+          + regional (known after apply)
+
+          + scale_policy (known after apply)
+
+          + zonal (known after apply)
+        }
+    }
+
+  # yandex_kubernetes_node_group.node-group[0] will be created
+  + resource "yandex_kubernetes_node_group" "node-group" {
+      + cluster_id        = (known after apply)
+      + created_at        = (known after apply)
+      + description       = "First node group"
+      + id                = (known after apply)
+      + instance_group_id = (known after apply)
+      + labels            = {
+          + "key" = "value"
+        }
+      + name              = "node-group-0"
+      + status            = (known after apply)
+      + version           = (known after apply)
+      + version_info      = (known after apply)
+
+      + allocation_policy {
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-a"
+            }
+        }
+
+      + deploy_policy (known after apply)
+
+      + instance_template {
+          + metadata                  = (known after apply)
+          + nat                       = (known after apply)
+          + network_acceleration_type = (known after apply)
+          + platform_id               = "standard-v2"
+
+          + boot_disk {
+              + size = 50
+              + type = "network-ssd"
+            }
+
+          + container_network (known after apply)
+
+          + container_runtime {
+              + type = "containerd"
+            }
+
+          + gpu_settings (known after apply)
+
+          + network_interface {
+              + ipv4       = true
+              + ipv6       = (known after apply)
+              + nat        = true
+              + subnet_ids = (known after apply)
+            }
+
+          + resources {
+              + core_fraction = 20
+              + cores         = 2
+              + gpus          = 0
+              + memory        = 2
+            }
+
+          + scheduling_policy {
+              + preemptible = true
+            }
+        }
+
+      + maintenance_policy {
+          + auto_repair  = true
+          + auto_upgrade = true
+        }
+
+      + scale_policy {
+          + fixed_scale {
+              + size = 1
+            }
+        }
+    }
+
+  # yandex_kubernetes_node_group.node-group[1] will be created
+  + resource "yandex_kubernetes_node_group" "node-group" {
+      + cluster_id        = (known after apply)
+      + created_at        = (known after apply)
+      + description       = "First node group"
+      + id                = (known after apply)
+      + instance_group_id = (known after apply)
+      + labels            = {
+          + "key" = "value"
+        }
+      + name              = "node-group-1"
+      + status            = (known after apply)
+      + version           = (known after apply)
+      + version_info      = (known after apply)
+
+      + allocation_policy {
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-b"
+            }
+        }
+
+      + deploy_policy (known after apply)
+
+      + instance_template {
+          + metadata                  = (known after apply)
+          + nat                       = (known after apply)
+          + network_acceleration_type = (known after apply)
+          + platform_id               = "standard-v2"
+
+          + boot_disk {
+              + size = 50
+              + type = "network-ssd"
+            }
+
+          + container_network (known after apply)
+
+          + container_runtime {
+              + type = "containerd"
+            }
+
+          + gpu_settings (known after apply)
+
+          + network_interface {
+              + ipv4       = true
+              + ipv6       = (known after apply)
+              + nat        = true
+              + subnet_ids = (known after apply)
+            }
+
+          + resources {
+              + core_fraction = 20
+              + cores         = 2
+              + gpus          = 0
+              + memory        = 2
+            }
+
+          + scheduling_policy {
+              + preemptible = true
+            }
+        }
+
+      + maintenance_policy {
+          + auto_repair  = true
+          + auto_upgrade = true
+        }
+
+      + scale_policy {
+          + fixed_scale {
+              + size = 1
+            }
+        }
+    }
+
+  # yandex_kubernetes_node_group.node-group[2] will be created
+  + resource "yandex_kubernetes_node_group" "node-group" {
+      + cluster_id        = (known after apply)
+      + created_at        = (known after apply)
+      + description       = "First node group"
+      + id                = (known after apply)
+      + instance_group_id = (known after apply)
+      + labels            = {
+          + "key" = "value"
+        }
+      + name              = "node-group-2"
+      + status            = (known after apply)
+      + version           = (known after apply)
+      + version_info      = (known after apply)
+
+      + allocation_policy {
+          + location {
+              + subnet_id = (known after apply)
+              + zone      = "ru-central1-d"
+            }
+        }
+
+      + deploy_policy (known after apply)
+
+      + instance_template {
+          + metadata                  = (known after apply)
+          + nat                       = (known after apply)
+          + network_acceleration_type = (known after apply)
+          + platform_id               = "standard-v2"
+
+          + boot_disk {
+              + size = 50
+              + type = "network-ssd"
+            }
+
+          + container_network (known after apply)
+
+          + container_runtime {
+              + type = "containerd"
+            }
+
+          + gpu_settings (known after apply)
+
+          + network_interface {
+              + ipv4       = true
+              + ipv6       = (known after apply)
+              + nat        = true
+              + subnet_ids = (known after apply)
+            }
+
+          + resources {
+              + core_fraction = 20
+              + cores         = 2
+              + gpus          = 0
+              + memory        = 2
+            }
+
+          + scheduling_policy {
+              + preemptible = true
+            }
+        }
+
+      + maintenance_policy {
+          + auto_repair  = true
+          + auto_upgrade = true
+        }
+
+      + scale_policy {
+          + fixed_scale {
+              + size = 1
+            }
+        }
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["container-registry.images.puller"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "container-registry.images.puller"
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["dns.editor"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "dns.editor"
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["k8s.clusters.agent"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "k8s.clusters.agent"
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["kms.keys.encrypterDecrypter"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "kms.keys.encrypterDecrypter"
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["load-balancer.admin"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "load-balancer.admin"
+    }
+
+  # yandex_resourcemanager_folder_iam_member.k8s-roles["vpc.publicAdmin"] will be created
+  + resource "yandex_resourcemanager_folder_iam_member" "k8s-roles" {
+      + folder_id = "b1gghlg0i9r4su8up17l"
+      + id        = (known after apply)
+      + member    = (known after apply)
+      + role      = "vpc.publicAdmin"
+    }
+
+  # yandex_vpc_network.app-net will be created
+  + resource "yandex_vpc_network" "app-net" {
+      + created_at                = (known after apply)
+      + default_security_group_id = (known after apply)
+      + folder_id                 = (known after apply)
+      + id                        = (known after apply)
+      + labels                    = (known after apply)
+      + name                      = "app-net"
+      + subnet_ids                = (known after apply)
+    }
+
+  # yandex_vpc_security_group.regional-k8s-sg will be created
+  + resource "yandex_vpc_security_group" "regional-k8s-sg" {
+      + created_at  = (known after apply)
+      + description = "Правила группы обеспечивают базовую работоспособность кластера Managed Service for Kubernetes. Примените ее к кластеру и группам узлов."
+      + folder_id   = (known after apply)
+      + id          = (known after apply)
+      + labels      = (known after apply)
+      + name        = "regional-k8s-sg"
+      + network_id  = (known after apply)
+      + status      = (known after apply)
+
+      + egress {
+          + description       = "Правило разрешает весь исходящий трафик. Узлы могут связаться с Yandex Container Registry, Yandex Object Storage, Docker Hub и т. д."
+          + from_port         = 0
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + protocol          = "ANY"
+          + to_port           = 65535
+          + v4_cidr_blocks    = [
+              + "0.0.0.0/0",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+
+      + ingress {
+          + description       = "Allow access to Kubernetes API via port 443 from internet."
+          + from_port         = -1
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = 443
+          + protocol          = "TCP"
+          + to_port           = -1
+          + v4_cidr_blocks    = [
+              + "0.0.0.0/0",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+      + ingress {
+          + description       = "Allow access to Kubernetes API via port 6443 from internet."
+          + from_port         = -1
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = 6443
+          + protocol          = "TCP"
+          + to_port           = -1
+          + v4_cidr_blocks    = [
+              + "0.0.0.0/0",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+      + ingress {
+          + description       = "Правило разрешает взаимодействие мастер-узел и узел-узел внутри группы безопасности."
+          + from_port         = 0
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + predefined_target = "self_security_group"
+          + protocol          = "ANY"
+          + to_port           = 65535
+          + v4_cidr_blocks    = []
+          + v6_cidr_blocks    = []
+            # (1 unchanged attribute hidden)
+        }
+      + ingress {
+          + description       = "Правило разрешает взаимодействие под-под и сервис-сервис. Укажите подсети вашего кластера Managed Service for Kubernetes и сервисов."
+          + from_port         = 0
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + protocol          = "ANY"
+          + to_port           = 65535
+          + v4_cidr_blocks    = [
+              + "10.10.1.0/24",
+              + "10.10.2.0/24",
+              + "10.10.3.0/24",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+      + ingress {
+          + description       = "Правило разрешает входящий трафик из интернета на диапазон портов NodePort. Добавьте или измените порты на нужные вам."
+          + from_port         = 30000
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + protocol          = "TCP"
+          + to_port           = 32767
+          + v4_cidr_blocks    = [
+              + "0.0.0.0/0",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+      + ingress {
+          + description       = "Правило разрешает отладочные ICMP-пакеты из внутренних подсетей."
+          + from_port         = -1
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + protocol          = "ICMP"
+          + to_port           = -1
+          + v4_cidr_blocks    = [
+              + "10.0.0.0/8",
+              + "172.16.0.0/12",
+              + "192.168.0.0/16",
+            ]
+          + v6_cidr_blocks    = []
+            # (2 unchanged attributes hidden)
+        }
+      + ingress {
+          + description       = "Правило разрешает проверки доступности с диапазона адресов балансировщика нагрузки. Нужно для работы отказоустойчивого кластера Managed Service for Kubernetes и сервисов балансировщика."
+          + from_port         = 0
+          + id                = (known after apply)
+          + labels            = (known after apply)
+          + port              = -1
+          + predefined_target = "loadbalancer_healthchecks"
+          + protocol          = "TCP"
+          + to_port           = 65535
+          + v4_cidr_blocks    = []
+          + v6_cidr_blocks    = []
+            # (1 unchanged attribute hidden)
+        }
+    }
+
+  # yandex_vpc_subnet.app-subnet-zones[0] will be created
+  + resource "yandex_vpc_subnet" "app-subnet-zones" {
+      + created_at     = (known after apply)
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "subnet-ru-central1-a"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.1.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-a"
+    }
+
+  # yandex_vpc_subnet.app-subnet-zones[1] will be created
+  + resource "yandex_vpc_subnet" "app-subnet-zones" {
+      + created_at     = (known after apply)
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "subnet-ru-central1-b"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.2.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-b"
+    }
+
+  # yandex_vpc_subnet.app-subnet-zones[2] will be created
+  + resource "yandex_vpc_subnet" "app-subnet-zones" {
+      + created_at     = (known after apply)
+      + folder_id      = (known after apply)
+      + id             = (known after apply)
+      + labels         = (known after apply)
+      + name           = "subnet-ru-central1-d"
+      + network_id     = (known after apply)
+      + v4_cidr_blocks = [
+          + "10.10.3.0/24",
+        ]
+      + v6_cidr_blocks = (known after apply)
+      + zone           = "ru-central1-d"
+    }
+
+Plan: 17 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + cluster_id           = (known after apply)
+  + cluster_name         = "k8s-regional"
+  + external_cluster_cmd = (known after apply)
+  + external_v4_address  = (known after apply)
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+yandex_kms_symmetric_key.kms-key: Creating...
+yandex_vpc_network.app-net: Creating...
+yandex_iam_service_account.my-regional-account: Creating...
+yandex_kms_symmetric_key.kms-key: Creation complete after 1s [id=abjkckhvnpa24pb78te6]
+yandex_iam_service_account.my-regional-account: Creation complete after 2s [id=ajefgkprfkgqkii29cir]
+yandex_resourcemanager_folder_iam_member.k8s-roles["dns.editor"]: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["load-balancer.admin"]: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["vpc.publicAdmin"]: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["kms.keys.encrypterDecrypter"]: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["k8s.clusters.agent"]: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["container-registry.images.puller"]: Creating...
+yandex_vpc_network.app-net: Creation complete after 3s [id=enp289l24mga85uc9i2j]
+yandex_vpc_subnet.app-subnet-zones[1]: Creating...
+yandex_vpc_subnet.app-subnet-zones[2]: Creating...
+yandex_vpc_subnet.app-subnet-zones[0]: Creating...
+yandex_vpc_subnet.app-subnet-zones[0]: Creation complete after 1s [id=e9bed1ua8tlsh9cskp1l]
+yandex_vpc_subnet.app-subnet-zones[2]: Creation complete after 1s [id=fl8s69l12rcatfdleq2k]
+yandex_vpc_subnet.app-subnet-zones[1]: Creation complete after 2s [id=e2lp4lracshrsmta63j4]
+yandex_vpc_security_group.regional-k8s-sg: Creating...
+yandex_resourcemanager_folder_iam_member.k8s-roles["dns.editor"]: Creation complete after 3s [id=b1gghlg0i9r4su8up17l/dns.editor/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_resourcemanager_folder_iam_member.k8s-roles["vpc.publicAdmin"]: Creation complete after 6s [id=b1gghlg0i9r4su8up17l/vpc.publicAdmin/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_vpc_security_group.regional-k8s-sg: Creation complete after 3s [id=enpfr8hh7evup80huc2d]
+yandex_resourcemanager_folder_iam_member.k8s-roles["load-balancer.admin"]: Creation complete after 8s [id=b1gghlg0i9r4su8up17l/load-balancer.admin/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_resourcemanager_folder_iam_member.k8s-roles["kms.keys.encrypterDecrypter"]: Still creating... [10s elapsed]
+yandex_resourcemanager_folder_iam_member.k8s-roles["k8s.clusters.agent"]: Still creating... [10s elapsed]
+yandex_resourcemanager_folder_iam_member.k8s-roles["container-registry.images.puller"]: Still creating... [10s elapsed]
+yandex_resourcemanager_folder_iam_member.k8s-roles["kms.keys.encrypterDecrypter"]: Creation complete after 11s [id=b1gghlg0i9r4su8up17l/kms.keys.encrypterDecrypter/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_resourcemanager_folder_iam_member.k8s-roles["container-registry.images.puller"]: Creation complete after 14s [id=b1gghlg0i9r4su8up17l/container-registry.images.puller/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_resourcemanager_folder_iam_member.k8s-roles["k8s.clusters.agent"]: Creation complete after 16s [id=b1gghlg0i9r4su8up17l/k8s.clusters.agent/serviceAccount:ajefgkprfkgqkii29cir]
+yandex_kubernetes_cluster.k8s-regional: Creating...
+yandex_kubernetes_cluster.k8s-regional: Still creating... [10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [30s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [40s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [50s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m0s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m30s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m40s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [1m50s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m0s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m30s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m40s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [2m50s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m0s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m30s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m40s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [3m50s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m0s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m30s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m40s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [4m50s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [5m0s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [5m10s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Still creating... [5m20s elapsed]
+yandex_kubernetes_cluster.k8s-regional: Creation complete after 5m29s [id=catqjjk9ql50jp2qep42]
+yandex_kubernetes_node_group.node-group[2]: Creating...
+yandex_kubernetes_node_group.node-group[0]: Creating...
+yandex_kubernetes_node_group.node-group[1]: Creating...
+yandex_kubernetes_node_group.node-group[2]: Still creating... [10s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [10s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [10s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [20s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [20s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [20s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [30s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [30s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [30s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [40s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [40s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [40s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [50s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [50s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [50s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [1m0s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m0s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m0s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [1m10s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m10s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m10s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [1m20s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m20s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m20s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [1m30s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m30s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m30s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Still creating... [1m40s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m40s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m40s elapsed]
+yandex_kubernetes_node_group.node-group[2]: Creation complete after 1m40s [id=catssvkgr8frt8bqvnr9]
+yandex_kubernetes_node_group.node-group[0]: Still creating... [1m50s elapsed]
+yandex_kubernetes_node_group.node-group[1]: Still creating... [1m50s elapsed]
+yandex_kubernetes_node_group.node-group[0]: Creation complete after 1m50s [id=catdpgk01dl3curqfg0h]
+yandex_kubernetes_node_group.node-group[1]: Creation complete after 1m58s [id=catnu315gvj0lril5hq6]
+
+Apply complete! Resources: 17 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cluster_id = "catqjjk9ql50jp2qep42"
+cluster_name = "k8s-regional"
+external_cluster_cmd = "yc managed-kubernetes cluster get-credentials --id catqjjk9ql50jp2qep42 --external"
+external_v4_address = "158.160.191.253"
+</pre>
+</details></p>
+
+
+Смотрим что получилось.
+
+VMs
+
+```
+$ yc compute instances list
+
++----------------------+---------------------------+---------------+---------+-----------------+-------------+
+|          ID          |           NAME            |    ZONE ID    | STATUS  |   EXTERNAL IP   | INTERNAL IP |
++----------------------+---------------------------+---------------+---------+-----------------+-------------+
+| epdvf88ct5gevciu4nmq | cl1f0kj5k346vbn1k608-ehij | ru-central1-b | RUNNING | 51.250.108.124  | 10.10.2.12  |
+| fhmcb8j5ofmksfgui92i | cl1mqe09dmbd92dvp4h5-uwuh | ru-central1-a | RUNNING | 84.201.128.137  | 10.10.1.17  |
+| fv4ndel180bfavjn8a75 | cl1mg3vtj45mpeg7292j-evak | ru-central1-d | RUNNING | 158.160.192.157 | 10.10.3.21  |
++----------------------+---------------------------+---------------+---------+-----------------+-------------+
+```
+
+Networks
+
+```
+$ yc vpc network list
+
++----------------------+---------+
+|          ID          |  NAME   |
++----------------------+---------+
+| enp289l24mga85uc9i2j | app-net |
++----------------------+---------+
+```
+
+subnets
+
+```
+$ yc vpc subnet list
+
++----------------------+-----------------------------------------------------------+----------------------+----------------+---------------+-----------------+
+|          ID          |                           NAME                            |      NETWORK ID      | ROUTE TABLE ID |     ZONE      |      RANGE      |
++----------------------+-----------------------------------------------------------+----------------------+----------------+---------------+-----------------+
+| e2lp4lracshrsmta63j4 | subnet-ru-central1-b                                      | enp289l24mga85uc9i2j |                | ru-central1-b | [10.10.2.0/24]  |
+| e9b7puc15obu4bisrpls | k8s-cluster-catqjjk9ql50jp2qep42-service-cidr-reservation | enp289l24mga85uc9i2j |                | ru-central1-a | [10.96.0.0/16]  |
+| e9bd898n69numf6l4c6j | k8s-cluster-catqjjk9ql50jp2qep42-pod-cidr-reservation     | enp289l24mga85uc9i2j |                | ru-central1-a | [10.112.0.0/16] |
+| e9bed1ua8tlsh9cskp1l | subnet-ru-central1-a                                      | enp289l24mga85uc9i2j |                | ru-central1-a | [10.10.1.0/24]  |
+| fl8s69l12rcatfdleq2k | subnet-ru-central1-d                                      | enp289l24mga85uc9i2j |                | ru-central1-d | [10.10.3.0/24]  |
++----------------------+-----------------------------------------------------------+----------------------+----------------+---------------+-----------------+
+```
+
+security groups
+
+```
+$ yc vpc security-group list
+
++----------------------+---------------------------------+--------------------------------+----------------------+
+|          ID          |              NAME               |          DESCRIPTION           |      NETWORK-ID      |
++----------------------+---------------------------------+--------------------------------+----------------------+
+| enpfr8hh7evup80huc2d | regional-k8s-sg                 | Правила группы обеспечивают    | enp289l24mga85uc9i2j |
+|                      |                                 | базовую работоспособность      |                      |
+|                      |                                 | кластера Managed Service for   |                      |
+|                      |                                 | Kubernetes. Примените ее к     |                      |
+|                      |                                 | кластеру и группам узлов.      |                      |
+| enphsq074sf48tm9apem | default-sg-enp289l24mga85uc9i2j | Default security group for     | enp289l24mga85uc9i2j |
+|                      |                                 | network                        |                      |
++----------------------+---------------------------------+--------------------------------+----------------------+
+```
+
+<p><details><summary>security group rules detail</summary>
+
+<pre>
+$ yc vpc security-group get regional-k8s-sg
+id: enpfr8hh7evup80huc2d
+folder_id: b1gghlg0i9r4su8up17l
+created_at: "2025-08-16T19:02:31Z"
+name: regional-k8s-sg
+description: Правила группы обеспечивают базовую работоспособность кластера Managed Service for Kubernetes. Примените ее к кластеру и группам узлов.
+network_id: enp289l24mga85uc9i2j
+status: ACTIVE
+rules:
+  - id: enp4jlknbs3e12t0ql4u
+    description: Правило разрешает весь исходящий трафик. Узлы могут связаться с Yandex Container Registry, Yandex Object Storage, Docker Hub и т. д.
+    direction: EGRESS
+    ports:
+      to_port: "65535"
+    protocol_name: ANY
+    protocol_number: "-1"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 0.0.0.0/0
+  - id: enpli0jq3c4tjpredl64
+    description: Allow access to Kubernetes API via port 443 from internet.
+    direction: INGRESS
+    ports:
+      from_port: "443"
+      to_port: "443"
+    protocol_name: TCP
+    protocol_number: "6"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 0.0.0.0/0
+  - id: enp9thos2ll3pu34aob9
+    description: Правило разрешает проверки доступности с диапазона адресов балансировщика нагрузки. Нужно для работы отказоустойчивого кластера Managed Service for Kubernetes и сервисов балансировщика.
+    direction: INGRESS
+    ports:
+      to_port: "65535"
+    protocol_name: TCP
+    protocol_number: "6"
+    predefined_target: loadbalancer_healthchecks
+  - id: enpsb2r0d6bq2gtg9jcg
+    description: Правило разрешает входящий трафик из интернета на диапазон портов NodePort. Добавьте или измените порты на нужные вам.
+    direction: INGRESS
+    ports:
+      from_port: "30000"
+      to_port: "32767"
+    protocol_name: TCP
+    protocol_number: "6"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 0.0.0.0/0
+  - id: enpm39uune03popsvs9n
+    description: Allow access to Kubernetes API via port 6443 from internet.
+    direction: INGRESS
+    ports:
+      from_port: "6443"
+      to_port: "6443"
+    protocol_name: TCP
+    protocol_number: "6"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 0.0.0.0/0
+  - id: enp7d9d7jtgvnr2vhoaj
+    description: Правило разрешает взаимодействие под-под и сервис-сервис. Укажите подсети вашего кластера Managed Service for Kubernetes и сервисов.
+    direction: INGRESS
+    ports:
+      to_port: "65535"
+    protocol_name: ANY
+    protocol_number: "-1"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 10.10.1.0/24
+        - 10.10.2.0/24
+        - 10.10.3.0/24
+  - id: enpf0pult9dd0pdv02sj
+    description: Правило разрешает взаимодействие мастер-узел и узел-узел внутри группы безопасности.
+    direction: INGRESS
+    ports:
+      to_port: "65535"
+    protocol_name: ANY
+    protocol_number: "-1"
+    predefined_target: self_security_group
+  - id: enpjm83rlh5b6d68rpqc
+    description: Правило разрешает отладочные ICMP-пакеты из внутренних подсетей.
+    direction: INGRESS
+    protocol_name: ICMP
+    protocol_number: "1"
+    cidr_blocks:
+      v4_cidr_blocks:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+</pre>
+</details></p>
+
+service account for k8s
+
+```
+$ yc iam service-account list
+
++----------------------+----------------------+--------+---------------------+-----------------------+
+|          ID          |         NAME         | LABELS |     CREATED AT      | LAST AUTHENTICATED AT |
++----------------------+----------------------+--------+---------------------+-----------------------+
+| ajefgkprfkgqkii29cir | regional-k8s-account |        | 2025-08-16 19:02:24 | 2025-08-16 19:10:00   |
+| ajeksvicm9mgluiniav6 | terra                |        | 2025-02-05 13:30:57 | 2025-02-05 17:10:00   |
+| ajeoqhl6afect60ikefq | sa-diplom            |        | 2025-08-16 18:38:25 | 2025-08-16 18:30:00   |
++----------------------+----------------------+--------+---------------------+-----------------------+
+
+
+$ yc iam service-account get regional-k8s-account
+
+id: ajefgkprfkgqkii29cir
+folder_id: b1gghlg0i9r4su8up17l
+created_at: "2025-08-16T19:02:24Z"
+name: regional-k8s-account
+description: K8S regional service account
+last_authenticated_at: "2025-08-16T19:10:00Z"
+```
+
+k8s cluster
+
+```
+$ yc managed-kubernetes cluster list
+
++----------------------+--------------+---------------------+---------+---------+-------------------------+--------------------+
+|          ID          |     NAME     |     CREATED AT      | HEALTH  | STATUS  |    EXTERNAL ENDPOINT    | INTERNAL ENDPOINT  |
++----------------------+--------------+---------------------+---------+---------+-------------------------+--------------------+
+| catqjjk9ql50jp2qep42 | k8s-regional | 2025-08-16 19:02:42 | HEALTHY | RUNNING | https://158.160.191.253 | https://10.10.1.21 |
++----------------------+--------------+---------------------+---------+---------+-------------------------+--------------------+
+```
+
+<p><details><summary>cluster details</summary>
+
+<pre>
+$ yc managed-kubernetes cluster get k8s-regional
+id: catqjjk9ql50jp2qep42
+folder_id: b1gghlg0i9r4su8up17l
+created_at: "2025-08-16T19:02:42Z"
+name: k8s-regional
+status: RUNNING
+health: HEALTHY
+network_id: enp289l24mga85uc9i2j
+master:
+  regional_master:
+    region_id: ru-central1
+    internal_v4_address: 10.10.1.21
+    external_v4_address: 158.160.191.253
+  locations:
+    - zone_id: ru-central1-a
+      subnet_id: e9bed1ua8tlsh9cskp1l
+    - zone_id: ru-central1-b
+      subnet_id: e2lp4lracshrsmta63j4
+    - zone_id: ru-central1-d
+      subnet_id: fl8s69l12rcatfdleq2k
+  etcd_cluster_size: "3"
+  version: "1.32"
+  endpoints:
+    internal_v4_endpoint: https://10.10.1.21
+    external_v4_endpoint: https://158.160.191.253
+  master_auth:
+    cluster_ca_certificate: |
+      -----BEGIN CERTIFICATE-----
+      MIIC5zCCAc+gAwIBAgIBADANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwprdWJl
+      cm5ldGVzMB4XDTI1MDgxNjE5MDI0NFoXDTM1MDgxNDE5MDI0NFowFTETMBEGA1UE
+      AxMKa3ViZXJuZXRlczCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPSP
+      9bK1ntlERHbiVpunkB/w/gFuS5i1UZ3vHbc4JUsWi4vVs6yP7D69tzMzG8RLMyco
+      Be4PTBCe5SAMxquQJuhv8lHaJ0b3mQj6VTXh8Cn9XFgxJ7P+/hWieb4LOw0pF0d1
+      tvSji2fk9mYBWUinf4EJZOypwt1u0cmvoH4aNbPTNEURX2saOjsg5Rwve6RP7Leo
+      7RWouEb2zW8aSL9ch/RNUg3Cz3icNAKff2Lcqm54wcb9tYR5M9cTiAJ9gidYk/Ef
+      rlC80GflLXrND6Et0Rl144EPVGobojhPOVkwW3P2uI7mX6W/ykBSyeLQq6fY5FsT
+      26ksTR4oUrQsdOa+XdkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB
+      /wQFMAMBAf8wHQYDVR0OBBYEFGVSB1VGrC+UjbDB8SOpZJ/myBKZMA0GCSqGSIb3
+      DQEBCwUAA4IBAQCAszcCtK+W9UByYpQ4T7Wcf/hf5vPcgki05W5kXEOugJo9KDKk
+      00gia7s/ZOWAxbM6YCduY/xIvBorhXsHKgwMsvNYVx4A427UTYhiITmZyjqyonWy
+      ng7VZFAoNHUtZYW8j9hKp10t7BGo1csGp9dKUuumT6SsYUec04GH0BQzBGCkZ2yu
+      5Om+PGXO5uzfPjculxxt37zlL4l1q9+7NdnLPrTyTbx9slTpVToaNMLyZiKxn/+S
+      qbp6tzTbFd/9bDkyg9RHaApPh5/ZHfLpVtGQfIJjjPQTGJlqFc+0btuTdZFfmcdn
+      Aj9jXwcy84q4ofVGdjnrNSPNWHQ25ddE0nu5
+      -----END CERTIFICATE-----
+  version_info:
+    current_version: "1.32"
+  maintenance_policy:
+    auto_upgrade: true
+    maintenance_window:
+      anytime: {}
+  security_group_ids:
+    - enpfr8hh7evup80huc2d
+  resources:
+    cores: "2"
+    core_fraction: "100"
+    memory: "8589934592"
+  scale_policy:
+    auto_scale:
+      min_resource_preset_id: s-c2-m8
+ip_allocation_policy:
+  cluster_ipv4_cidr_block: 10.112.0.0/16
+  node_ipv4_cidr_mask_size: "24"
+  service_ipv4_cidr_block: 10.96.0.0/16
+service_account_id: ajefgkprfkgqkii29cir
+node_service_account_id: ajefgkprfkgqkii29cir
+release_channel: REGULAR
+kms_provider:
+  key_id: abjkckhvnpa24pb78te6
+</pre>
+</details></p>
+
+cluster nodes
+
+```
+$ yc managed-kubernetes cluster list-nodes k8s-regional
+
++--------------------------------+---------------------------+--------------------------------+-------------+--------+
+|         CLOUD INSTANCE         |      KUBERNETES NODE      |           RESOURCES            |    DISK     | STATUS |
++--------------------------------+---------------------------+--------------------------------+-------------+--------+
+| epdvf88ct5gevciu4nmq           | cl1f0kj5k346vbn1k608-ehij | 2 20% core(s), 2.0 GB of       | 50.0 GB ssd | READY  |
+| RUNNING_ACTUAL                 |                           | memory                         |             |        |
+| fv4ndel180bfavjn8a75           | cl1mg3vtj45mpeg7292j-evak | 2 20% core(s), 2.0 GB of       | 50.0 GB ssd | READY  |
+| RUNNING_ACTUAL                 |                           | memory                         |             |        |
+| fhmcb8j5ofmksfgui92i           | cl1mqe09dmbd92dvp4h5-uwuh | 2 20% core(s), 2.0 GB of       | 50.0 GB ssd | READY  |
+| RUNNING_ACTUAL                 |                           | memory                         |             |        |
++--------------------------------+---------------------------+--------------------------------+-------------+--------+
+```
+
+cluster node groups
+
+```
+$ yc managed-kubernetes cluster list-node-groups k8s-regional
+
++----------------------+--------------+----------------------+---------------------+---------+------+
+|          ID          |     NAME     |  INSTANCE GROUP ID   |     CREATED AT      | STATUS  | SIZE |
++----------------------+--------------+----------------------+---------------------+---------+------+
+| catdpgk01dl3curqfg0h | node-group-0 | cl1mqe09dmbd92dvp4h5 | 2025-08-16 19:08:10 | RUNNING |    1 |
+| catnu315gvj0lril5hq6 | node-group-1 | cl1f0kj5k346vbn1k608 | 2025-08-16 19:08:10 | RUNNING |    1 |
+| catssvkgr8frt8bqvnr9 | node-group-2 | cl1mg3vtj45mpeg7292j | 2025-08-16 19:08:10 | RUNNING |    1 |
++----------------------+--------------+----------------------+---------------------+---------+------+
+```
+
+Получили 3 ноды в разных зонах доступности.
+
+Подключимся к кластеру и получим с него базовую информацию.
+
+Для добавления конфигурации кластера в конфигурационный файл нужно выполнить команду `yc managed-kubernetes cluster get-credentials --id catqjjk9ql50jp2qep42 --external`.
+
+```
+$ yc managed-kubernetes cluster get-credentials --id catqjjk9ql50jp2qep42 --external
+
+Context 'yc-k8s-regional' was added as default to kubeconfig '/home/sergey/.kube/config'.
+Check connection to cluster using 'kubectl cluster-info --kubeconfig /home/sergey/.kube/config'.
+
+Note, that authentication depends on 'yc' and its config profile 'default'.
+To access clusters using the Kubernetes API, please use Kubernetes Service Account.
+```
+
+Посмотрим состав кластера
+
+```
+$ kubectl get nodes
+
+NAME                        STATUS   ROLES    AGE   VERSION
+cl1f0kj5k346vbn1k608-ehij   Ready    <none>   40m   v1.32.1
+cl1mg3vtj45mpeg7292j-evak   Ready    <none>   40m   v1.32.1
+cl1mqe09dmbd92dvp4h5-uwuh   Ready    <none>   40m   v1.32.1
+```
+
+Посмотрим запущенные поды
+
+```
+$ kubectl get pods -A
+
+NAMESPACE     NAME                                 READY   STATUS    RESTARTS   AGE
+kube-system   coredns-768847b69f-889xt             1/1     Running   0          44m
+kube-system   coredns-768847b69f-fq7vr             1/1     Running   0          40m
+kube-system   ip-masq-agent-8kjcj                  1/1     Running   0          41m
+kube-system   ip-masq-agent-d8nlc                  1/1     Running   0          40m
+kube-system   ip-masq-agent-xvlc7                  1/1     Running   0          40m
+kube-system   kube-dns-autoscaler-66b55897-dwtfw   1/1     Running   0          44m
+kube-system   kube-proxy-646zw                     1/1     Running   0          40m
+kube-system   kube-proxy-d6nr2                     1/1     Running   0          41m
+kube-system   kube-proxy-ktbfw                     1/1     Running   0          40m
+kube-system   metrics-server-8689cb9795-f5hr8      1/1     Running   0          44m
+kube-system   metrics-server-8689cb9795-ptvvf      1/1     Running   0          44m
+kube-system   npd-v0.8.0-gwpcb                     1/1     Running   0          40m
+kube-system   npd-v0.8.0-h8d78                     1/1     Running   0          40m
+kube-system   npd-v0.8.0-wchlc                     1/1     Running   0          41m
+kube-system   yc-disk-csi-node-v2-dpl6k            6/6     Running   0          40m
+kube-system   yc-disk-csi-node-v2-j7xtk            6/6     Running   0          41m
+kube-system   yc-disk-csi-node-v2-lvhlx            6/6     Running   0          40m
+```
+
+Заглянем в конфигурационный файл
+
+```
+$ cat ~/.kube/config 
+
+apiVersion: v1
+clusters:
+...
+...
+...
+- cluster:
+    certificate-authority-data: LS0t...tCg==
+    server: https://158.160.191.253
+  name: yc-managed-k8s-catqjjk9ql50jp2qep42
+contexts:
+...
+...
+...
+- context:
+    cluster: yc-managed-k8s-catqjjk9ql50jp2qep42
+    user: yc-managed-k8s-catqjjk9ql50jp2qep42
+  name: yc-k8s-regional
+current-context: yc-k8s-regional
+kind: Config
+preferences: {}
+users:
+- name: admin
+  user:
+    client-certificate-data: LS...0K
+    client-key-data: LS0...tCg==
+- name: sergey
+  user:
+    client-certificate-data: LS0...S0K
+    client-key-data: LS0...LQo=
+- name: yc-managed-k8s-catqjjk9ql50jp2qep42
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1beta1
+      args:
+      - k8s
+      - create-token
+      - --profile=default
+      command: /home/sergey/yandex-cloud/bin/yc
+      env: null
+      provideClusterInfo: false
+```
 
 ---
 ### Создание тестового приложения
