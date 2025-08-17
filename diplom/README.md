@@ -54,7 +54,7 @@
 
 ### Решение
 
-При помощи terraform создаем сервисный аккаунт и бакет, сохраняем ключи для следующего шага. [Конфигурация](./bucket/).
+При помощи terraform создаем сервисный аккаунт и бакет, сохраняем ключи для следующего шага. [Конфигурация terraform](./terraform/bucket/).
 
 <p><details><summary>$ terraform apply</summary>
 
@@ -159,7 +159,7 @@ Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
 </pre>
 </details></p>
 
-Проверяем созаднное.
+Смотрим изменения в облаке.
 
 Сервисный аккаунт.
 
@@ -248,7 +248,7 @@ $ ls ../kuber/cred*
 Воспользуемся развертыванием через Yandex Managment Service for Kubernetes.
 
 Поднимаем 3 сети, сервисный аккаунт для кластера, кластер в 3х зонах доступности, 3 группы ВМ по 1 ВМ в каждой зоне.
-[Конфигурация](./terraform/).
+[Конфигурация terraform](./terraform/kuber/).
 
 <p><details><summary>$ terraform apply</summary>
 
