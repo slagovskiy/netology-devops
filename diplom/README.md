@@ -922,8 +922,12 @@ external_v4_address = "158.160.191.253"
 </pre>
 </details></p>
 
+Проверяем, что состояние сохранилось в бакете.
 
-Смотрим что получилось.
+![](screenshots/003.png)
+
+
+Смотрим что получилось в облаке.
 
 VMs
 
@@ -1341,6 +1345,152 @@ users:
 2. Регистри с собранным docker image. В качестве регистри может быть DockerHub или [Yandex Container Registry](https://cloud.yandex.ru/services/container-registry), созданный также с помощью terraform.
 
 ---
+
+### Решение
+
+В качестве тестового приложения будет домонстрационная страница vue приложения.
+
+[Репозиторий приложения](https://github.com/slagovskiy/netology-static-app)
+
+[Registry on docker hub](https://hub.docker.com/r/slagovskiy/netology-static-app).
+
+<p><details><summary>Создание приложения</summary>
+<pre>
+$ npm create vue@latest
+
+Need to install the following packages:
+  create-vue@3.18.0
+Ok to proceed? (y) y
+┌  Vue.js - The Progressive JavaScript Framework
+│
+◇  Project name (target directory):
+│  simple-app
+│
+◇  Select features to include in your project: (↑/↓ to navigate, space to select, a to toggle all, enter to confirm)
+│  none
+│
+◇  Select experimental features to include in your project: (↑/↓ to navigate, space to select, a to toggle all, enter to confirm)
+│  none
+│
+◇  Skip all example code and start with a blank Vue project?
+│  No
+
+Scaffolding project in /home/sergey/Work/netology-devops/diplom/app/simple-app...
+│
+└  Done. Now run:
+
+   cd simple-app
+   npm install
+   npm run dev
+
+| Optional: Initialize Git in your project directory with:
+  
+   git init && git add -A && git commit -m "initial commit"
+
+
+$ cd simple-app/
+
+
+$ npm install
+
+added 145 packages, and audited 146 packages in 5s
+
+45 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+
+$ npm run build
+
+
+> simple-app@0.0.0 build
+> vite build
+
+vite v7.1.2 building for production...
+✓ 23 modules transformed.
+dist/index.html                  0.43 kB │ gzip:  0.28 kB
+dist/assets/index-CrXw9O2d.css   3.71 kB │ gzip:  1.19 kB
+dist/assets/index-C72tlqVF.js   70.32 kB │ gzip: 27.72 kB
+✓ built in 1.37s
+
+
+$ ls dist/ -l
+
+total 16
+drwxrwxr-x 2 sergey sergey 4096 Aug 17 13:34 assets
+-rw-rw-r-- 1 sergey sergey 4286 Aug 17 13:34 favicon.ico
+-rw-rw-r-- 1 sergey sergey  428 Aug 17 13:34 index.html
+
+</pre>
+</details></p>
+
+Сборка приложения в контейнер
+
+```
+$ sudo docker build -t slagovskiy/netology-static-app:1.0.0 .
+[+] Building 30.7s (8/8) FINISHED                                                                                                                  docker:default
+ => [internal] load build definition from Dockerfile                                                                                                         0.0s
+ => => transferring dockerfile: 196B                                                                                                                         0.0s
+ => [internal] load metadata for docker.io/library/nginx:latest                                                                                              3.5s
+ => [internal] load .dockerignore                                                                                                                            0.0s
+ => => transferring context: 2B                                                                                                                              0.0s
+ => [internal] load build context                                                                                                                            0.1s
+ => => transferring context: 79.30kB                                                                                                                         0.1s
+ => [1/3] FROM docker.io/library/nginx:latest@sha256:33e0bbc7ca9ecf108140af6288c7c9d1ecc77548cbfd3952fd8466a75edefe57                                       26.0s
+ => => resolve docker.io/library/nginx:latest@sha256:33e0bbc7ca9ecf108140af6288c7c9d1ecc77548cbfd3952fd8466a75edefe57                                        0.0s
+ => => sha256:33e0bbc7ca9ecf108140af6288c7c9d1ecc77548cbfd3952fd8466a75edefe57 10.25kB / 10.25kB                                                             0.0s
+ => => sha256:ad5708199ec7d169c6837fe46e1646603d0f7d0a0f54d3cd8d07bc1c818d0224 8.59kB / 8.59kB                                                               0.0s
+ => => sha256:b1badc6e50664185acfaa0ca255d8076061c2a9d881cecaaad281ae11af000ce 28.23MB / 28.23MB                                                             1.7s
+ => => sha256:a2da0c0f2353a40d540821152b3b9453660db34259766b1ce68b0b1f708435fd 44.07MB / 44.07MB                                                            19.5s
+ => => sha256:e5d9bb0b85cc4679fa056599af85512f519647fc66ac34366bfe010a35655d05 629B / 629B                                                                   1.5s
+ => => sha256:f15190cd0aed34df2541e6a569d349858dd83fe2a519d7c0ec023133b6d3c4f7 2.29kB / 2.29kB                                                               0.0s
+ => => sha256:14a859b5ba2476efceab3febd8bbb2a45d9e4512e3dc517ace62011249bb25bc 955B / 955B                                                                   2.1s
+ => => sha256:716cdf61af5980e38ce793a90c1add1c40c93cc9371c2370705497ed3c48a77a 404B / 404B                                                                   2.4s
+ => => extracting sha256:b1badc6e50664185acfaa0ca255d8076061c2a9d881cecaaad281ae11af000ce                                                                    9.6s
+ => => sha256:14e422fd20a0170c368a8b40a1d145de07fcf31cf075f77861f2231fa5bd7936 1.21kB / 1.21kB                                                               2.6s
+ => => sha256:c3741b707ce659db0b820eef3d7277607c8fcc73494e162cb6d349f5799b16c8 1.40kB / 1.40kB                                                               3.0s
+ => => extracting sha256:a2da0c0f2353a40d540821152b3b9453660db34259766b1ce68b0b1f708435fd                                                                    5.4s
+ => => extracting sha256:e5d9bb0b85cc4679fa056599af85512f519647fc66ac34366bfe010a35655d05                                                                    0.0s
+ => => extracting sha256:14a859b5ba2476efceab3febd8bbb2a45d9e4512e3dc517ace62011249bb25bc                                                                    0.0s
+ => => extracting sha256:716cdf61af5980e38ce793a90c1add1c40c93cc9371c2370705497ed3c48a77a                                                                    0.0s
+ => => extracting sha256:14e422fd20a0170c368a8b40a1d145de07fcf31cf075f77861f2231fa5bd7936                                                                    0.0s
+ => => extracting sha256:c3741b707ce659db0b820eef3d7277607c8fcc73494e162cb6d349f5799b16c8                                                                    0.0s
+ => [2/3] COPY nginx.conf /etc/nginx/conf.d/default.conf                                                                                                     0.6s
+ => [3/3] COPY simple-app/dist/ /usr/share/nginx/html                                                                                                        0.1s
+ => exporting to image                                                                                                                                       0.2s
+ => => exporting layers                                                                                                                                      0.1s
+ => => writing image sha256:bc3cf98772fbc2246214a1cf0c1bff42a0603ae20cee34c553e082f53973cf55                                                                 0.0s
+ => => naming to docker.io/slagovskiy/netology-static-app:1.0.0                                                                                              0.0s
+
+```
+
+Публикация контейнера.
+
+```
+$ docker login -u slagovskiy
+
+i Info → A Personal Access Token (PAT) can be used instead.
+         To create a PAT, visit https://app.docker.com/settings
+         
+         
+Password: 
+
+Login Succeeded
+
+
+$ docker push slagovskiy/netology-static-app:1.0.0
+```
+
+Локальный тестовый запуск контейнера
+
+![](screenshots/002.png)
+
+Страница проекта на docker hub
+
+![](screenshots/001.png)
+
+---
 ### Подготовка cистемы мониторинга и деплой приложения
 
 Уже должны быть готовы конфигурации для автоматического создания облачной инфраструктуры и поднятия Kubernetes кластера.  
@@ -1352,6 +1502,216 @@ users:
 
 Способ выполнения:
 1. Воспользоваться пакетом [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus), который уже включает в себя [Kubernetes оператор](https://operatorhub.io/) для [grafana](https://grafana.com/), [prometheus](https://prometheus.io/), [alertmanager](https://github.com/prometheus/alertmanager) и [node_exporter](https://github.com/prometheus/node_exporter). Альтернативный вариант - использовать набор helm чартов от [bitnami](https://github.com/bitnami/charts/tree/main/bitnami).
+
+---
+
+### Решение
+
+Для проекта создадим пространство project.
+
+```
+kubectl create namespace project
+```
+
+Используя helm устанавливаем стек мониторинга.
+
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack --namespace=project
+
+```
+
+Используя helm устанавливаем ingress.
+
+```
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace=project
+```
+
+<p><details><summary>log</summary>
+<pre>
+$ kubectl create namespace project
+
+namespace/project created
+
+
+$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+"prometheus-community" has been added to your repositories
+
+
+$ helm repo update
+
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "prometheus-community" chart repository
+Update Complete. ⎈Happy Helming!⎈
+
+
+$ helm install prometheus prometheus-community/kube-prometheus-stack --namespace=project
+
+NAME: prometheus
+LAST DEPLOYED: Sun Aug 17 15:33:33 2025
+NAMESPACE: project
+STATUS: deployed
+REVISION: 1
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace project get pods -l "release=prometheus"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace project get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace project get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=prometheus" -oname)
+  kubectl --namespace project port-forward $POD_NAME 3000
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+
+
+$ kubectl --namespace project get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+prom-operator
+
+
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+"ingress-nginx" has been added to your repositories
+
+
+$ helm repo update
+
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "ingress-nginx" chart repository
+...Successfully got an update from the "prometheus-community" chart repository
+Update Complete. ⎈Happy Helming!⎈
+
+
+$ helm install ingress-nginx ingress-nginx/ingress-nginx --namespace=project
+
+NAME: ingress-nginx
+LAST DEPLOYED: Sun Aug 17 15:36:34 2025
+NAMESPACE: project
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The ingress-nginx controller has been installed.
+It may take a few minutes for the load balancer IP to be available.
+You can watch the status by running 'kubectl get service --namespace project ingress-nginx-controller --output wide --watch'
+
+An example Ingress that makes use of the controller:
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: example
+    namespace: foo
+  spec:
+    ingressClassName: nginx
+    rules:
+      - host: www.example.com
+        http:
+          paths:
+            - pathType: Prefix
+              backend:
+                service:
+                  name: exampleService
+                  port:
+                    number: 80
+              path: /
+    # This section is only required if TLS is to be enabled for the Ingress
+    tls:
+      - hosts:
+        - www.example.com
+        secretName: example-tls
+
+If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
+
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: example-tls
+    namespace: foo
+  data:
+    tls.crt: <base64 encoded cert>
+    tls.key: <base64 encoded key>
+  type: kubernetes.io/tls
+</pre>
+</details></p>
+
+Перед публикацией проведем ряд настроек.
+
+Получим публичный адрес балансировщика.
+
+```
+$ yc load-balancer network-load-balancer list --format json | jq -r '.[0].listeners[0].address'
+
+158.160.130.57
+```
+
+Создадим DNS зону.
+
+```
+yc dns zone create --name sergey-lagovskiy --zone "sergey-lagovskiy.ru." --public-visibility --description "Публичная зона для домена sergey-lagovskiy.ru"
+
+id: dnsf6qgqvb3emt6d1vk6
+folder_id: b1gghlg0i9r4su8up17l
+created_at: "2025-08-17T08:44:39.201Z"
+name: sergey-lagovskiy
+description: Публичная зона для домена sergey-lagovskiy.ru
+zone: sergey-lagovskiy.ru.
+public_visibility: {}
+```
+
+Создадим А записи для приложения и графаны
+
+```
+yc dns zone add-records --name sergey-lagovskiy --record "app 300 A 158.160.130.57"
+
++--------+--------------------------+------+----------------+-----+
+| ACTION |           NAME           | TYPE |      DATA      | TTL |
++--------+--------------------------+------+----------------+-----+
+| +      | app.sergey-lagovskiy.ru. | A    | 158.160.130.57 | 300 |
++--------+--------------------------+------+----------------+-----+
+
+
+yc dns zone add-records --name sergey-lagovskiy --record "gfn 300 A 158.160.130.57"
+
++--------+--------------------------+------+----------------+-----+
+| ACTION |           NAME           | TYPE |      DATA      | TTL |
++--------+--------------------------+------+----------------+-----+
+| +      | gfn.sergey-lagovskiy.ru. | A    | 158.160.130.57 | 300 |
++--------+--------------------------+------+----------------+-----+
+```
+
+Теперь выполним публикацию приложения из образа slagovskiy/netology-static-app:1.0.0, сущности ингресс и создадим сервисную учетной записи для CI/CD GitHub Actions.
+
+```
+$ cd deploy/
+
+
+$ kubectl apply -f deployment.yml
+
+deployment.apps/simple-app created
+service/simple-app-service created
+
+
+$ kubectl apply -f ingress.yml
+
+ingress.networking.k8s.io/project-ingress created
+
+
+$ kubectl apply -f sa_for_github.yml
+
+serviceaccount/admin-user created
+clusterrolebinding.rbac.authorization.k8s.io/admin-user created
+secret/admin-user-token created
+```
+
+---
 
 ### Деплой инфраструктуры в terraform pipeline
 
