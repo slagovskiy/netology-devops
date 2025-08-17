@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: simple-app
+  name: simple-app
+  namespace: project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simple-app
+  template:
+    metadata:
+      namespace: project
+      labels:
+        app: simple-app
+    spec:
+      containers:
+      - name: simple-app
+        image: slagovskiy/netology-static-app:1.0.0
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-app-service
+  namespace: project
+spec:
+  selector:
+    app: simple-app
+  ports:
+  - port: 80
+    name: http-simple-app
+    targetPort: 80
