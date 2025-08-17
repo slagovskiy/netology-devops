@@ -1725,7 +1725,13 @@ clusterrolebinding.rbac.authorization.k8s.io/admin-user created
 secret/admin-user-token created
 ```
 
-# тут нужны скриншоты
+версия приложения 1.0.0, не несет ни какой пользы
+
+![](./screenshots/012.png)
+
+graphana
+
+![](./screenshots/013.png)
 
 
 ### Установка и настройка CI/CD
@@ -1745,18 +1751,109 @@ secret/admin-user-token created
 2. При любом коммите в репозиторие с тестовым приложением происходит сборка и отправка в регистр Docker образа.
 3. При создании тега (например, v1.0.0) происходит сборка и отправка с соответствующим label в регистри, а также деплой соответствующего Docker образа в кластер Kubernetes.
 
+
 ---
 
 ### Решение
 
 Воспользуемся GitHub Actions. Добавим несколько секретов:
 
-DOCKER_USERNAME - имя пользователя для docker hub
-DOCKER_TOKEN - токен для docker hub
-YC_CLOUD_ID - идентификатор облака
-YC_FOLDER_ID - идентификатор папки
-YC_OAUTH_TOKEN - токен сервисной учетной записи, полчить можно командой `kubectl describe secret/admin-user-token -n kube-system`
-KUBE_CLUSTER_NAME - наименование кластера
+- DOCKER_USERNAME - имя пользователя для docker hub
+- DOCKER_TOKEN - токен для docker hub
+- YC_CLOUD_ID - идентификатор облака
+- YC_FOLDER_ID - идентификатор папки
+- YC_OAUTH_TOKEN - токен сервисной учетной записи
+- KUBE_CLUSTER_NAME - наименование кластера
+
+pipline
+
+```yaml
+name: Docker CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+
+
+jobs:
+  build_and_publish_docker_image:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.set_tag.outputs.tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Determine Docker tag
+        id: tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # Если это тег, используем его имя (удаляем 'refs/tags/')
+            echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            # Если это коммит без тега, используем первые 8 символов SHA
+            echo "DOCKER_TAG=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
+          fi
+          echo "Using tag: $DOCKER_TAG"
+          
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: ${{ secrets.DOCKER_USERNAME }}/netology-static-app:${{ env.DOCKER_TAG }}
+          push: true
+
+  deploy_to_kubernetes:
+    # Выполняется только при наличии тега
+    if: startsWith(github.ref, 'refs/tags')
+    needs: build_and_publish_docker_image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Determine Docker tag
+        id: tag
+        run: |
+          echo "DOCKER_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "Using tag: $DOCKER_TAG"
+
+      - name: Install YC CLI
+        run: |
+          curl https://storage.yandexcloud.net/yandexcloud-yc/release/0.158.0/linux/amd64/yc -o yc
+          sudo mv yc /usr/bin/
+          sudo chmod 777 /usr/bin/yc
+          yc config set token ${{ secrets.YC_OAUTH_TOKEN }}
+          yc config set cloud-id ${{ secrets.YC_CLOUD_ID }}
+          yc config set folder-id ${{ secrets.YC_FOLDER_ID }}
+
+      - name: Download kubeconfig
+        run: |
+          yc managed-kubernetes cluster get-credentials ${{ secrets.KUBE_CLUSTER_NAME }} --external
+
+      - name: Replace placeholders in deployment.yaml
+        run: |
+          sed -i.bak "s/TEMPLATE_TAG/${{ env.DOCKER_TAG }}/g" deployment.yaml
+
+      - name: Apply Kubernetes Manifest
+        run: |
+          kubectl apply -f deployment.yaml
+```
 
 ![](./screenshots/004.png)
 
@@ -1764,8 +1861,31 @@ KUBE_CLUSTER_NAME - наименование кластера
 - если происходит простой коммит, то собирается образ приложения и делается push на docker hub, при этом используются 8 символов из sha коммита
 - если происходит коммит с тэгом, то собирается образ приложения и делается push на docker hub с тэгот, который был задан в коммите, далее собирается временный контейнер на который устанавливается yc, производится настройка с учетом переданных переменных, запрашивается конфигурация кластера, далее она используется для публикации приложения
 
-# тут нужны скриншоты
+Добавим в приложение какой нибудь фунционал, версия 1.0.1 успешно доставилась
 
+![](./screenshots/014.png)
+
+Повторим, добавим в подвал строчку с версией, теперь это 1.0.2
+
+![](./screenshots/015.png)
+
+[Репозиторий приложения](https://github.com/slagovskiy/netology-static-app)
+
+github
+
+![](./screenshots/016.png)
+
+[Registry](https://hub.docker.com/r/slagovskiy/netology-static-app/tags)
+
+docker hub
+
+![](./screenshots/017.png)
+
+[Graphana](http://gfn.sergey-lagovskiy.ru/)
+
+Логин - admin
+
+Пароль - prom-operator
 
 ---
 ## Что необходимо для сдачи задания?
